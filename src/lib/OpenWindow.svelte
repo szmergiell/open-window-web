@@ -1,13 +1,21 @@
 <script lang="ts">
-  let indoorTemperature: number = 0;
-  let indoorRelativeHumidity: number = 0;
+  import ProblemJson from "./ProblemJson.svelte";
 
-  let outdoorTemperature: number = 0;
-  let outdoorRelativeHumidity: number = 0;
+  let indoorTemperature: number;
+  let indoorRelativeHumidity: number;
+
+  let outdoorTemperature: number;
+  let outdoorRelativeHumidity: number;
 
   let indoorDewPoint: number;
   let outdoorDewPoint: number;
   let openWindow: boolean;
+
+  let problemJson: {
+    title: string;
+    detail: string;
+    errors: object;
+  };
 
   function round(value: number): number {
     return Math.round(value * 100) / 100;
@@ -35,9 +43,18 @@
     });
 
     const json = await response.json();
-    indoorDewPoint = round(json["indoor_dew_point"]);
-    outdoorDewPoint = round(json["outdoor_dew_point"]);
-    openWindow = json["open_window"];
+
+    if (response.status != 200) {
+      problemJson = json;
+      openWindow = undefined;
+      return;
+    }
+
+    problemJson = undefined;
+
+    indoorDewPoint = round(json.indoor_dew_point);
+    outdoorDewPoint = round(json.outdoor_dew_point);
+    openWindow = json.open_window;
   }
 </script>
 
@@ -50,6 +67,7 @@
       bind:value={indoorTemperature}
       min="-100"
       max="100"
+      step="0.1"
     />
   </label>
   <label>
@@ -58,7 +76,7 @@
       type="number"
       name="indoor-relative-humidity"
       bind:value={indoorRelativeHumidity}
-      min="0"
+      min="1"
       max="100"
     />
   </label>
@@ -71,6 +89,7 @@
       bind:value={outdoorTemperature}
       min="-100"
       max="100"
+      step="0.1"
     />
   </label>
   <label>
@@ -79,12 +98,14 @@
       type="number"
       name="outdoor-relative-humidity"
       bind:value={outdoorRelativeHumidity}
-      min="0"
+      min="1"
       max="100"
     />
   </label>
 
   <input type="submit" value="Submit" />
+
+  <ProblemJson {...problemJson} />
 </form>
 
 {#if openWindow !== undefined}
