@@ -1,6 +1,6 @@
 <script lang="ts">
   export let label: string = "";
-  export let type: string = "text";
+  export let type: "text" | "number" = "text";
   export let name: string = "";
   export let value: string | number = "";
   export let min: string = "";
@@ -32,9 +32,9 @@
     {type}
     {name}
     {value}
-    min={type === "number" ? min : undefined}
-    max={type === "number" ? max : undefined}
-    step={type === "number" ? step : undefined}
+    min={type === "number" && min ? min : undefined}
+    max={type === "number" && max ? max : undefined}
+    step={type === "number" && step ? step : undefined}
     on:change={handleOnChange}
     on:input={handleOnInput}
   />

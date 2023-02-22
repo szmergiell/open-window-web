@@ -1,6 +1,7 @@
 <script lang="ts">
   import ProblemJson from "./ProblemJson.svelte";
-  import Input from "./Input.svelte";
+  import TemperatureInput from "./TemperatureInput.svelte";
+  import HumidityInput from "./HumidityInput.svelte";
 
   let indoorTemperature: number;
   let indoorRelativeHumidity: number;
@@ -57,67 +58,29 @@
     outdoorDewPoint = round(json.outdoor_dew_point);
     openWindow = json.open_window;
   }
-
-  function validateTemperature(value: number): boolean {
-    const temperature = Number(value);
-    return -100 <= temperature && temperature <= 100;
-  }
-
-  const temperatureErrorMessage: string =
-    "Temperature must be a number between -100 and 100";
-
-  function validateHumidity(value: number): boolean {
-    const humidity = Number(value);
-    return 1 <= humidity && humidity <= 100;
-  }
-
-  const humidityErrorMessage: string =
-    "Relative humidity must be a percentage value between 1 and 100";
 </script>
 
 <form on:submit|preventDefault={handleSubmit}>
-  <Input
+  <TemperatureInput
     label="Outdoor temperature [°C]:"
-    type="number"
     name="indoor-temperature"
     bind:value={indoorTemperature}
-    min="-100"
-    max="100"
-    step="0.1"
-    validate={validateTemperature}
-    errorMessage={temperatureErrorMessage}
   />
-  <Input
+  <HumidityInput
     label="Indoor relative humidity [%]:"
-    type="number"
     name="indoor-relative-humidity"
     bind:value={indoorRelativeHumidity}
-    min="1"
-    max="100"
-    validate={validateHumidity}
-    errorMessage={humidityErrorMessage}
   />
 
-  <Input
+  <TemperatureInput
     label="Outdoor temperature [°C]:"
-    type="number"
     name="outdoor-temperature"
     bind:value={outdoorTemperature}
-    min="-100"
-    max="100"
-    step="0.1"
-    validate={validateTemperature}
-    errorMessage={temperatureErrorMessage}
   />
-  <Input
+  <HumidityInput
     label="Outdoor relative humidity [%]:"
-    type="number"
     name="outdoor-relative-humidity"
     bind:value={outdoorRelativeHumidity}
-    min="1"
-    max="100"
-    validate={validateHumidity}
-    errorMessage={humidityErrorMessage}
   />
 
   <input type="submit" value="Submit" />
