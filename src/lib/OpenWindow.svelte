@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { IProblemJson } from "./ProblemJson.svelte";
   import ProblemJson from "./ProblemJson.svelte";
   import TemperatureInput from "./TemperatureInput.svelte";
   import HumidityInput from "./HumidityInput.svelte";
@@ -13,17 +14,25 @@
   let outdoorDewPoint: number;
   let openWindow: boolean;
 
-  let problemJson: {
-    title: string;
-    detail: string;
-    errors: object;
+  const genericError: IProblemJson = {
+    title: "Submit failed.",
+    detail: "Could not submit data to the server. Please try again later.",
   };
+
+  const unprocessableEntity: IProblemJson = {
+    title: "Invalid request.",
+    detail: "Request validation failed. Please check the data and try again.",
+  };
+
+  let problemJson: IProblemJson;
 
   function round(value: number): number {
     return Math.round(value * 100) / 100;
   }
 
   async function handleSubmit() {
+    openWindow = undefined;
+
     const data = {
       indoor_measurement: {
         temperature: indoorTemperature,
@@ -35,34 +44,58 @@
       },
     };
 
-    const response = await fetch("http://localhost:3000/open-window", {
+    const requestInit: RequestInit = {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
-    });
+    };
 
-    const json = await response.json();
+    let response: Response;
 
-    if (response.status != 200) {
-      problemJson = json;
-      openWindow = undefined;
+    try {
+      response = await fetch("http://localhost:3000/open-window", requestInit);
+    } catch (ex) {
+      console.log(ex);
+      problemJson = genericError;
       return;
     }
 
-    problemJson = undefined;
+    if (
+      response.status !== 200 &&
+      response.status !== 400 &&
+      response.status !== 422
+    ) {
+      problemJson = genericError;
+      return;
+    }
 
-    indoorDewPoint = round(json.indoor_dew_point);
-    outdoorDewPoint = round(json.outdoor_dew_point);
-    openWindow = json.open_window;
+    if (response.status === 422) {
+      problemJson = unprocessableEntity;
+      return;
+    }
+
+    if (response.status === 400) {
+      problemJson = await response.json();
+      return;
+    }
+
+    if (response.status === 200) {
+      problemJson = undefined;
+      const json = await response.json();
+      indoorDewPoint = round(json.indoor_dew_point);
+      outdoorDewPoint = round(json.outdoor_dew_point);
+      openWindow = json.open_window;
+      return;
+    }
   }
 </script>
 
 <form on:submit|preventDefault={handleSubmit}>
   <TemperatureInput
-    label="Outdoor temperature [°C]:"
+    label="Indoor temperature [°C]:"
     name="indoor-temperature"
     bind:value={indoorTemperature}
   />
@@ -85,7 +118,7 @@
 
   <input type="submit" value="Submit" />
 
-  <ProblemJson {...problemJson} />
+  <ProblemJson {problemJson} />
 </form>
 
 {#if openWindow !== undefined}
