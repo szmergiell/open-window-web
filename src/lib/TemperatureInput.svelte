@@ -4,11 +4,23 @@
   export let label = "";
   export let name = "";
   export let value: number;
+  export let isValid: (display: boolean) => boolean;
+  export let valid: boolean;
 
   const min = -100;
   const max = 100;
 
-  function validate(temperature: number): boolean {
+  function validate(value: string | number): boolean {
+    if (typeof value === "string") {
+      return false;
+    }
+
+    const temperature = Number(value);
+
+    if (isNaN(temperature)) {
+      return false;
+    }
+
     return min <= temperature && temperature <= max;
   }
 
@@ -25,4 +37,6 @@
   max={max.toString()}
   {validate}
   {errorMessage}
+  bind:isValid
+  bind:valid
 />

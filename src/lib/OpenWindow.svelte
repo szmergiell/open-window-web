@@ -5,10 +5,20 @@
   import HumidityInput from "./HumidityInput.svelte";
 
   let indoorTemperature: number;
+  let indoorTemperatureValid: boolean;
+  let indoorTemperatureIsValid: (display: boolean) => boolean;
+
   let indoorRelativeHumidity: number;
+  let indoorRelativeHumidityValid: boolean;
+  let indoorRelativeHumidityIsValid: (display: boolean) => boolean;
 
   let outdoorTemperature: number;
+  let outdoorTemperatureValid: boolean;
+  let outdoorTemperatureIsValid: (display: boolean) => boolean;
+
   let outdoorRelativeHumidity: number;
+  let outdoorRelativeHumidityValid: boolean;
+  let outdoorRelativeHumidityIsValid: (display: boolean) => boolean;
 
   let indoorDewPoint: number;
   let outdoorDewPoint: number;
@@ -30,8 +40,27 @@
     return Math.round(value * 100) / 100;
   }
 
+  function formIsValid(display: boolean): boolean {
+    return [
+      indoorTemperatureIsValid(display),
+      indoorRelativeHumidityIsValid(display),
+      outdoorTemperatureIsValid(display),
+      outdoorRelativeHumidityIsValid(display),
+    ].every(Boolean);
+  }
+
+  $: formValid =
+    indoorTemperatureValid &&
+    indoorRelativeHumidityValid &&
+    outdoorTemperatureValid &&
+    outdoorRelativeHumidityValid;
+
   async function handleSubmit() {
     openWindow = undefined;
+
+    if (!formIsValid(true)) {
+      return;
+    }
 
     const data = {
       indoor_measurement: {
@@ -58,7 +87,7 @@
     try {
       response = await fetch("http://localhost:3000/open-window", requestInit);
     } catch (ex) {
-      console.log(ex);
+      console.error(ex);
       problemJson = genericError;
       return;
     }
@@ -93,33 +122,41 @@
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit}>
+<form on:submit|preventDefault={handleSubmit} novalidate>
   <TemperatureInput
     label="Indoor temperature [°C]:"
     name="indoor-temperature"
     bind:value={indoorTemperature}
+    bind:isValid={indoorTemperatureIsValid}
+    bind:valid={indoorTemperatureValid}
   />
   <HumidityInput
     label="Indoor relative humidity [%]:"
     name="indoor-relative-humidity"
     bind:value={indoorRelativeHumidity}
+    bind:isValid={indoorRelativeHumidityIsValid}
+    bind:valid={indoorRelativeHumidityValid}
   />
 
   <TemperatureInput
     label="Outdoor temperature [°C]:"
     name="outdoor-temperature"
     bind:value={outdoorTemperature}
+    bind:isValid={outdoorTemperatureIsValid}
+    bind:valid={outdoorTemperatureValid}
   />
   <HumidityInput
     label="Outdoor relative humidity [%]:"
     name="outdoor-relative-humidity"
     bind:value={outdoorRelativeHumidity}
+    bind:isValid={outdoorRelativeHumidityIsValid}
+    bind:valid={outdoorRelativeHumidityValid}
   />
 
-  <input type="submit" value="Submit" />
-
-  <ProblemJson {problemJson} />
+  <input type="submit" value="Submit" disabled={!formValid} />
 </form>
+
+<ProblemJson {problemJson} />
 
 {#if openWindow !== undefined}
   <div class="result">
@@ -154,13 +191,17 @@
     display: flex;
     flex-flow: column nowrap;
     gap: 0.5rem;
-    color: var(--green2);
   }
 
   form input[type="submit"] {
     margin-top: 1rem;
     background-color: var(--green2);
     color: var(--bg-dark);
+  }
+
+  form input[type="submit"]:disabled {
+    color: var(--terminal-black, darkgray);
+    background-color: var(--fg-dark, lightgray);
   }
 
   .result {

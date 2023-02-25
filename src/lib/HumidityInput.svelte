@@ -4,11 +4,23 @@
   export let label = "";
   export let name = "";
   export let value: number;
+  export let isValid: (display: boolean) => boolean;
+  export let valid: boolean;
 
   const min = 1;
   const max = 100;
 
-  function validate(humidity: number): boolean {
+  function validate(value: string | number): boolean {
+    if (typeof value === "string") {
+      return false;
+    }
+
+    const humidity = Number(value);
+
+    if (isNaN(humidity)) {
+      return false;
+    }
+
     return min <= humidity && humidity <= max;
   }
 
@@ -25,4 +37,6 @@
   step="1"
   {validate}
   {errorMessage}
+  bind:isValid
+  bind:valid
 />

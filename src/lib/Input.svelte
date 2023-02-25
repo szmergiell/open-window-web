@@ -8,27 +8,72 @@
   export let step: string = "";
   export let validate: (value: string | number) => boolean = () => true;
   export let errorMessage: string = "";
+  export let valid: boolean = false;
 
-  let invalid: boolean = false;
+  export const isValid: (display: boolean) => boolean = (display) => {
+    if (!display) {
+      return validate(value);
+    }
+
+    touched = true;
+    valid = validate(value);
+    return valid;
+  };
+
+  let touched: boolean = false;
+  $: displayError = !valid && touched;
 
   function handleOnChange() {
-    invalid = !validate(value);
+    touched = true;
+    valid = validate(value);
+  }
+
+  let inputElement: HTMLInputElement;
+
+  function onNextBlurTriggerChange() {
+    inputElement.addEventListener(
+      "blur",
+      function () {
+        handleOnChange();
+      },
+      { once: true }
+    );
   }
 
   function handleOnInput(event: Event) {
     const target = event.currentTarget as HTMLInputElement;
     const newValue = target.value;
-    if (type === "number") {
-      value = Number(newValue);
-    } else {
+    if (type === "text") {
       value = newValue;
+      return;
+    }
+
+    if (type === "number") {
+      if (newValue.length === 0) {
+        // Number input type returns "" when it contains non valid characters.
+        // Which sometimes leads to situation where input value changed on UI,
+        // but underlying node / JS value hasn't changed,
+        // so the "change" event is not being triggered.
+        // e.g., type "a" into blank numeric input field
+        onNextBlurTriggerChange();
+        value = newValue;
+        return;
+      }
+      const newNumber = Number(newValue);
+      if (isNaN(newNumber)) {
+        console.error(`this should not happen - ${newValue}`);
+        value = newValue;
+        return;
+      }
+      value = newNumber;
     }
   }
 </script>
 
-<label class:invalid>
+<label class={displayError ? "invalid" : ""}>
   {label}
   <input
+    bind:this={inputElement}
     {type}
     {name}
     {value}
@@ -38,10 +83,14 @@
     on:change={handleOnChange}
     on:input={handleOnInput}
   />
-  {invalid ? errorMessage : ""}
+  {displayError ? errorMessage : ""}
 </label>
 
 <style>
+  label {
+    color: var(--green2);
+  }
+
   .invalid {
     color: var(--red, red);
   }
